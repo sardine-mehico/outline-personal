@@ -14,10 +14,13 @@ module.exports = {
   "production-ssl-disabled": shared,
   production: {
     ...shared,
-    dialectOptions: {
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    },
+    dialectOptions:
+      process.env.PGSSLMODE === "disable"
+        ? {}
+        : {
+            ssl: {
+              rejectUnauthorized: false,
+            },
+          },
   },
 };

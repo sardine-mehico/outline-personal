@@ -10,6 +10,7 @@ import { client } from "~/utils/ApiClient";
 import Desktop from "~/utils/Desktop";
 import { getRedirectUrl } from "~/utils/urls";
 import { PasskeyAuthenticationProvider } from "./PasskeyAuthenticationProvider";
+import { PasswordAuthenticationProvider } from "./PasswordAuthenticationProvider";
 
 type Props = React.ComponentProps<typeof ButtonLarge> & {
   id: string;
@@ -68,6 +69,13 @@ function AuthenticationProvider(props: Props) {
 
   if (id === "passkeys") {
     return <PasskeyAuthenticationProvider {...rest} />;
+  }
+
+  if (id === "password") {
+    if (isCreate) {
+      return null;
+    }
+    return <PasswordAuthenticationProvider {...rest} />;
   }
 
   if (id === "email") {

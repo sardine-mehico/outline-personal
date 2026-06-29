@@ -161,3 +161,42 @@ export async function getDetailsForEmailUpdateToken(
 
   return { user, email };
 }
+
+/**
+ * Retrieves the user associated with a password reset token, validating the
+ * token's type, expiration, and signature. Unlike email sign-in tokens these are
+ * not bound to an IP address, because a reset link is frequently opened on a
+ * different device than the one that requested it.
+ *
+ * @param token The password reset token to validate.
+ * @returns The user the token belongs to.
+ * @throws AuthenticationError if the token is missing, invalid, or expired.
+ */
+export async function getUserForPasswordResetToken(
+  token: string
+): Promise<User> {
+  const payload = getJWTPayload(token);
+
+  if (payload.type !== "password-reset") {
+    throw AuthenticationError("Invalid token");
+  }
+
+  // check the token is within it's expiration time
+  if (payload.createdAt) {
+    if (new Date(payload.createdAt) < subMinutes(new Date(), 60)) {
+      throw AuthenticationError("Expired token");
+    }
+  }
+
+  const user = await User.scope("withTeam").findByPk(payload.id, {
+    rejectOnEmpty: true,
+  });
+
+  try {
+    JWT.verify(token, user.jwtSecret);
+  } catch (_err) {
+    throw AuthenticationError("Invalid token");
+  }
+
+  return user;
+}

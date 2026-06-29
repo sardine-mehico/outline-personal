@@ -162,6 +162,12 @@ export const UserValidation = {
 
   /** The maximum length of the user email */
   maxEmailLength: 255,
+
+  /** The minimum length of a user password */
+  minPasswordLength: 8,
+
+  /** The maximum length of a user password (bounds the cost of hashing) */
+  maxPasswordLength: 256,
 };
 
 export const WebhookSubscriptionValidation = {

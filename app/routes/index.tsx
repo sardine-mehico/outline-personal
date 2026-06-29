@@ -13,6 +13,8 @@ const Authenticated = lazy(() => import("~/components/Authenticated"));
 const AuthenticatedRoutes = lazy(() => import("./authenticated"));
 const Shared = lazy(() => import("~/scenes/Shared"));
 const Login = lazy(() => import("~/scenes/Login"));
+const Register = lazy(() => import("~/scenes/Login/Register"));
+const PasswordReset = lazy(() => import("~/scenes/Login/PasswordReset"));
 const Logout = lazy(() => import("~/scenes/Logout"));
 const OAuthAuthorize = lazy(() => import("~/scenes/Login/OAuthAuthorize"));
 
@@ -42,6 +44,8 @@ export default function Routes() {
         <Switch>
           <Route exact path="/" component={Login} />
           <Route exact path="/create" component={Login} />
+          <Route exact path="/register" component={Register} />
+          <Route exact path="/auth/password-reset" component={PasswordReset} />
           <Route exact path="/logout" component={Logout} />
           <Route exact path="/desktop-redirect" component={DesktopRedirect} />
           <Route exact path="/oauth/authorize" component={OAuthAuthorize} />

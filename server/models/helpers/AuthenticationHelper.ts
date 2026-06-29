@@ -58,7 +58,7 @@ export default class AuthenticationHelper {
 
     return AuthenticationHelper.providers
       .sort((hook) =>
-        hook.value.id === "email" || hook.value.id === "passkeys" ? 1 : -1
+        ["email", "passkeys", "password"].includes(hook.value.id) ? 1 : -1
       )
       .filter((hook) => {
         // Email sign-in is an exception as it does not have an authentication
@@ -73,6 +73,13 @@ export default class AuthenticationHelper {
         // for the team, to avoid showing an unusable sign-in option.
         if (hook.value.id === "passkeys") {
           return team?.passkeysEnabled && teamHasPasskeys;
+        }
+
+        // Password sign-in is gated solely by the plugin's env flag; it is only
+        // present in the providers list when enabled, and is shown even before a
+        // team has any password users so the first user can self-register.
+        if (hook.value.id === "password") {
+          return true;
         }
 
         // If no team return all possible authentication providers except email and passkeys.

@@ -52,6 +52,10 @@ import env from "@server/env";
 import DeleteAttachmentTask from "@server/queues/tasks/DeleteAttachmentTask";
 import type { APIContext } from "@server/types";
 import { VerificationCode } from "@server/utils/VerificationCode";
+import {
+  hashPassword,
+  verifyPassword as verifyPasswordHash,
+} from "@server/utils/passwords";
 import parseAttachmentIds from "@server/utils/parseAttachmentIds";
 import { CacheHelper } from "@server/utils/CacheHelper";
 import { normalizeIp } from "@server/utils/ip";
@@ -163,6 +167,10 @@ class User extends ParanoidModel<
   @Column(DataType.BLOB)
   @Encrypted
   jwtSecret: string;
+
+  @Column(DataType.STRING)
+  @SkipChangeset
+  passwordDigest: string | null;
 
   @IsDate
   @Column
@@ -719,6 +727,58 @@ class User extends ParanoidModel<
       },
       this.jwtSecret
     );
+
+  /**
+   * Returns a temporary token that authorizes setting a new password. It has a
+   * medium-length expiry and is invalidated if the user's jwt secret rotates.
+   *
+   * @returns the password reset token.
+   */
+  getPasswordResetToken = () =>
+    JWT.sign(
+      {
+        id: this.id,
+        createdAt: new Date().toISOString(),
+        type: "password-reset",
+      },
+      this.jwtSecret
+    );
+
+  /**
+   * Sets the user's password by computing and assigning a salted hash. This does
+   * not persist the change; the caller is responsible for saving the user within
+   * its own transaction.
+   *
+   * @param password the new plaintext password.
+   * @returns a promise that resolves once the digest has been assigned.
+   * @throws ValidationError if the password length is out of bounds.
+   */
+  setPassword = async (password: string): Promise<void> => {
+    if (
+      password.length < UserValidation.minPasswordLength ||
+      password.length > UserValidation.maxPasswordLength
+    ) {
+      throw ValidationError(
+        `Password must be between ${UserValidation.minPasswordLength} and ${UserValidation.maxPasswordLength} characters`
+      );
+    }
+    this.passwordDigest = await hashPassword(password);
+  };
+
+  /**
+   * Verifies a plaintext password against the stored digest using a
+   * constant-time comparison. Returns false for users without a password set,
+   * such as SSO-only accounts, so they fail closed.
+   *
+   * @param password the plaintext password to check.
+   * @returns a promise resolving to true when the password matches.
+   */
+  verifyPassword = async (password: string): Promise<boolean> => {
+    if (!this.passwordDigest) {
+      return false;
+    }
+    return verifyPasswordHash(password, this.passwordDigest);
+  };
 
   /**
    * Returns a list of teams that have a user matching this user's email.
