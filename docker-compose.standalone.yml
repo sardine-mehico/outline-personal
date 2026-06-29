@@ -1,0 +1,57 @@
+# Standalone, self-contained Outline stack: app + postgres + redis.
+#
+#   1. cp .env.docker.example .env   (then fill in secrets — see that file)
+#   2. docker compose -f docker-compose.standalone.yml up -d --build
+#      ...or pull the CI-built image instead of building locally:
+#      docker compose -f docker-compose.standalone.yml up -d   (uses `image:` below)
+#   3. open http://localhost:3000  (first registered user becomes the owner)
+#
+# DB migrations run automatically on app boot; no separate step needed.
+name: outline-standalone
+
+services:
+  outline:
+    image: ghcr.io/sardine-mehico/outline-personal:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.standalone
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:3000:3000"   # localhost only; use "0.0.0.0:3000:3000" for LAN access
+    volumes:
+      - outline_data:/var/lib/outline/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-outline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-outline}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-outline} -d ${POSTGRES_DB:-outline}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  outline_data:

@@ -1,0 +1,79 @@
+# Self-contained image for Outline (this fork, incl. local password auth).
+# Unlike ./Dockerfile this does NOT depend on the published outlinewiki/outline-base
+# image: the builder stage compiles from this source tree directly.
+# Build:  docker build -f Dockerfile.standalone -t outline-personal .
+
+ARG APP_PATH=/opt/outline
+
+# ---------- builder (compiles app from source) ----------
+FROM node:26.3.0 AS builder
+ARG APP_PATH
+WORKDIR $APP_PATH
+
+RUN apt-get update && apt-get install -y cmake && rm -rf /var/lib/apt/lists/*
+
+# Immutable install needs the lockfile, yarn config and patches first (cache-friendly).
+COPY ./package.json ./yarn.lock ./.yarnrc.yml ./
+COPY ./patches ./patches
+
+# Builder-only heap ceiling. Upstream uses 24000 (24GB); that exceeds a typical
+# self-host's RAM. 6144 builds Outline without OOM on a ~9GB host; raise toward
+# 8192 if "JavaScript heap out of memory", lower toward 4096 if the host OOM-kills.
+ENV NODE_OPTIONS="--max-old-space-size=6144"
+
+RUN corepack enable
+RUN yarn install --immutable --network-timeout 1000000 && \
+  yarn cache clean
+
+# Full source: includes plugins/password, server/migrations and the custom auth edits.
+COPY . .
+ARG CDN_URL
+RUN yarn build
+
+RUN yarn workspaces focus --production && \
+  yarn cache clean
+
+# ---------- runner ----------
+FROM node:26.3.0-slim AS runner
+
+LABEL org.opencontainers.image.source="https://github.com/sardine-mehico/outline-personal"
+
+ARG APP_PATH
+WORKDIR $APP_PATH
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Create a non-root user compatible with Debian and BusyBox based images
+RUN addgroup --gid 1001 nodejs && \
+    adduser --uid 1001 --ingroup nodejs nodejs && \
+    mkdir -p /var/lib/outline && \
+    chown -R nodejs:nodejs /var/lib/outline && \
+    chown -R nodejs:nodejs $APP_PATH
+
+COPY --from=builder --chown=nodejs:nodejs $APP_PATH/build ./build
+# server/ (not just build/server) ships so the runtime migration glob
+# server/migrations/*.js picks up the custom add-password-digest migration.
+COPY --from=builder --chown=nodejs:nodejs $APP_PATH/server ./server
+COPY --from=builder --chown=nodejs:nodejs $APP_PATH/public ./public
+COPY --from=builder --chown=nodejs:nodejs $APP_PATH/.sequelizerc ./.sequelizerc
+COPY --from=builder --chown=nodejs:nodejs $APP_PATH/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs $APP_PATH/package.json ./package.json
+
+# Install wget to healthcheck the server
+RUN  apt-get update \
+    && apt-get install -y wget \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV FILE_STORAGE_LOCAL_ROOT_DIR=/var/lib/outline/data
+RUN mkdir -p "$FILE_STORAGE_LOCAL_ROOT_DIR" && \
+    chown -R nodejs:nodejs "$FILE_STORAGE_LOCAL_ROOT_DIR" && \
+    chmod 1777 "$FILE_STORAGE_LOCAL_ROOT_DIR"
+
+VOLUME /var/lib/outline/data
+
+USER nodejs
+
+HEALTHCHECK --interval=1m CMD wget -qO- "http://localhost:${PORT:-3000}/_health" | grep -q "OK" || exit 1
+
+EXPOSE 3000
+CMD ["node", "build/server/index.js"]
