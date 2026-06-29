@@ -21,7 +21,8 @@ COPY ./patches ./patches
 # 8192 if "JavaScript heap out of memory", lower toward 4096 if the host OOM-kills.
 ENV NODE_OPTIONS="--max-old-space-size=6144"
 
-RUN corepack enable
+# corepack is no longer bundled in node 26 images; install it to get yarn 4.
+RUN npm install -g corepack@latest && corepack enable
 RUN yarn install --immutable --network-timeout 1000000 && \
   yarn cache clean
 
