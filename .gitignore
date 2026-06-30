@@ -19,6 +19,7 @@ data/*
 # Local-only / never commit (secrets, scratch, agent data)
 credentials.md
 login-change.html
+theming.html
 .local-data/
 .impeccable/
 

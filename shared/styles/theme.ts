@@ -1,6 +1,12 @@
 import { darken, lighten, transparentize } from "polished";
 import type { DefaultTheme, Colors } from "styled-components";
 import breakpoints from "./breakpoints";
+import {
+  paletteOverrides,
+  baseOverrides,
+  lightOverrides,
+  darkOverrides,
+} from "./overrides";
 
 const defaultColors: Colors = {
   transparent: "transparent",
@@ -54,6 +60,7 @@ const spacing = {
 const buildBaseTheme = (input: Partial<Colors>) => {
   const colors = {
     ...defaultColors,
+    ...paletteOverrides,
     ...input,
   };
 
@@ -107,6 +114,7 @@ const buildBaseTheme = (input: Partial<Colors>) => {
     breakpoints,
     ...colors,
     ...spacing,
+    ...baseOverrides,
   };
 };
 
@@ -173,6 +181,7 @@ export const buildLightTheme = (input: Partial<Colors>): DefaultTheme => {
     progressBarBackground: colors.slateLight,
     scrollbarBackground: colors.smoke,
     scrollbarThumb: darken(0.15, colors.smokeDark),
+    ...lightOverrides,
   };
 };
 
@@ -263,6 +272,7 @@ export const buildDarkTheme = (input: Partial<Colors>): DefaultTheme => {
     progressBarBackground: colors.slate,
     scrollbarBackground: colors.black,
     scrollbarThumb: colors.lightBlack,
+    ...darkOverrides,
   };
 };
 
