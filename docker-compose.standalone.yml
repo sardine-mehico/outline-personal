@@ -18,8 +18,9 @@ services:
     env_file:
       - .env
     ports:
-      # host port configurable via OUTLINE_HOST_PORT (default 3000); keep URL in .env in sync.
-      - "127.0.0.1:${OUTLINE_HOST_PORT:-3000}:3000"   # localhost only; use 0.0.0.0 in URL/binding for LAN
+      # Bind address + host port are configurable in .env. Default 127.0.0.1 = localhost only.
+      # For LAN access set OUTLINE_BIND_ADDR=0.0.0.0 and point URL at the machine's LAN IP.
+      - "${OUTLINE_BIND_ADDR:-127.0.0.1}:${OUTLINE_HOST_PORT:-3000}:3000"
     volumes:
       - outline_data:/var/lib/outline/data
     depends_on:
