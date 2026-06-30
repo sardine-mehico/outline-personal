@@ -1,7 +1,8 @@
 import type { Colors, DefaultTheme } from "styled-components";
 
 /**
- * Fork-local theme overrides — currently: Apple SF fonts + GitHub Primer palette.
+ * Fork-local theme overrides — currently: Noto Sans (UI) + Consolas (mono) fonts
+ * + GitHub Primer palette.
  *
  * Values live here (a file upstream never touches) and are merged into theme.ts
  * via four small spreads, so they survive `git rebase` onto new Outline releases.
@@ -26,10 +27,13 @@ export const paletteOverrides: Partial<Colors> = {
 
 /** Shared by light AND dark: fonts. */
 export const baseOverrides: Partial<DefaultTheme> = {
+  // Noto Sans is embedded (public/fonts + @font-face in static/index.html).
   fontFamily:
-    "'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    "'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  // Consolas is NOT embedded (proprietary); it renders where installed (Windows),
+  // otherwise falls back through the monospace stack.
   fontFamilyMono:
-    "'SF Mono', ui-monospace, SFMono-Regular, 'Liberation Mono', Menlo, Consolas, monospace",
+    "Consolas, ui-monospace, SFMono-Regular, Menlo, 'Liberation Mono', monospace",
 };
 
 /** GitHub Primer — light. */
