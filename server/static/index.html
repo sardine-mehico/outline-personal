@@ -29,6 +29,47 @@
         src: url("{cdn-url}/fonts/Inter-italic.var.woff2") format("woff2");
       }
 
+      /* Apple SF Pro (UI) — variable, covers all weights */
+      @font-face {
+        font-family: "SF Pro";
+        font-display: swap;
+        font-weight: 100 900;
+        src: url("{cdn-url}/fonts/SF-Pro.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "SF Pro";
+        font-display: swap;
+        font-style: italic;
+        font-weight: 100 900;
+        src: url("{cdn-url}/fonts/SF-Pro-Italic.woff2") format("woff2");
+      }
+
+      /* Apple SF Mono (code) */
+      @font-face {
+        font-family: "SF Mono";
+        font-display: swap;
+        font-weight: 400;
+        src: url("{cdn-url}/fonts/SF-Mono-Regular.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "SF Mono";
+        font-display: swap;
+        font-weight: 500;
+        src: url("{cdn-url}/fonts/SF-Mono-Medium.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "SF Mono";
+        font-display: swap;
+        font-weight: 600;
+        src: url("{cdn-url}/fonts/SF-Mono-Semibold.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "SF Mono";
+        font-display: swap;
+        font-weight: 700;
+        src: url("{cdn-url}/fonts/SF-Mono-Bold.woff2") format("woff2");
+      }
+
       body,
       html {
         margin: 0;
@@ -79,7 +120,7 @@
         window.localStorage &&
         window.localStorage.getItem("theme") === "dark"
       ) {
-        var color = "#111319";
+        var color = "#0d1117";
         document.querySelector("#root").style.background = color;
         document
           .querySelector('meta[name="theme-color"]')
