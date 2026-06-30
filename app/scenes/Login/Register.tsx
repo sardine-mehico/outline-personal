@@ -1,6 +1,7 @@
+import { observer } from "mobx-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
+import { useHistory, Redirect } from "react-router-dom";
 import styled from "styled-components";
 import { s } from "@shared/styles";
 import { Client } from "@shared/types";
@@ -12,8 +13,10 @@ import Heading from "~/components/Heading";
 import Input from "~/components/Input";
 import Text from "~/components/Text";
 import { Form } from "~/components/primitives/Form";
+import useStores from "~/hooks/useStores";
 import Desktop from "~/utils/Desktop";
 import { detectLanguage } from "~/utils/language";
+import { homePath } from "~/utils/routeHelpers";
 import { BackButton } from "./components/BackButton";
 import { Background } from "./components/Background";
 import { Centered } from "./components/Centered";
@@ -28,7 +31,16 @@ import { Centered } from "./components/Centered";
 function Register() {
   const { t } = useTranslation();
   const history = useHistory();
+  const { auth } = useStores();
   const clientType = Desktop.isElectron() ? Client.Desktop : Client.Web;
+
+  // Once the session is established (e.g. immediately after a successful
+  // registration) forward to the app instead of rendering the form again. The
+  // native-form sign-in redirect can briefly land back here before the client
+  // auth state settles, which would otherwise strand the user on this page.
+  if (auth.authenticated) {
+    return <Redirect to={homePath()} />;
+  }
 
   return (
     <Background>
@@ -108,4 +120,4 @@ const Content = styled(Text)`
   margin-top: -8px;
 `;
 
-export default Register;
+export default observer(Register);
